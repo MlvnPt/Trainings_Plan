@@ -1,3 +1,9 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12141a">
 <title>Trainingsplan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
@@ -16,22 +22,25 @@
     --pull:#4a90c4;
     --legs:#c4524a;
     --home:#5aa66d;
+    --progress:#8a6fd1;
   }
 
-  *{ box-sizing:border-box; }
+  *{ box-sizing:border-box; -webkit-text-size-adjust:100%; }
+  html, body{ height:100%; }
   body{
+    margin:0;
     background:var(--bg);
     color:var(--text);
     font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
     min-height:100vh;
     -webkit-tap-highlight-color:transparent;
   }
-  h1,h2,.display{
+  h1,h2,h3,.display{
     font-family:'Oswald',system-ui,sans-serif;
     text-wrap:balance;
   }
   button{ font-family:inherit; }
-  input[type="number"]{ font-family:'Inter',system-ui,sans-serif; }
+  input[type="number"], input[type="text"], input[type="date"], select{ font-family:'Inter',system-ui,sans-serif; }
 
   .app{
     max-width:560px;
@@ -93,6 +102,9 @@
     color:var(--text-dim);
     letter-spacing:.02em;
   }
+  .menu-card.compact{ flex:0 0 auto; padding:16px 22px; gap:4px; }
+  .menu-card.compact .name{ font-size:22px; }
+  #card-progress{ --accent: var(--progress); }
   #card-push{ --accent: var(--push); }
   #card-pull{ --accent: var(--pull); }
   #card-legs{ --accent: var(--legs); }
@@ -113,6 +125,7 @@
     justify-content:space-between;
     padding:max(18px,env(safe-area-inset-top)) 18px 16px;
     background:linear-gradient(var(--bg) 70%, transparent);
+    gap:10px;
   }
   .workout-header h1{
     font-size:30px;
@@ -122,8 +135,15 @@
     margin:0;
     border-bottom:4px solid var(--accent);
     padding-bottom:4px;
+    min-width:0;
   }
-  .back-btn{
+  .header-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex:0 0 auto;
+  }
+  .icon-btn{
     width:38px;
     height:38px;
     min-width:38px;
@@ -136,8 +156,8 @@
     justify-content:center;
     cursor:pointer;
   }
-  .back-btn:active{ background:var(--surface-2); }
-  .back-btn svg{ width:18px; height:18px; }
+  .icon-btn:active{ background:var(--surface-2); }
+  .icon-btn svg{ width:18px; height:18px; }
 
   .exercise-list{
     padding:4px 16px 40px;
@@ -151,14 +171,59 @@
     border-radius:10px;
     padding:14px 16px 16px;
   }
-  .exercise-card h2{
+  .exercise-card.dragging{
+    box-shadow:0 10px 28px rgba(0,0,0,.45);
+    position:relative;
+    z-index:20;
+    transition:none !important;
+  }
+  .exercise-card-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .exercise-card-head h2{
     font-size:17px;
     font-weight:600;
     text-transform:uppercase;
     letter-spacing:.02em;
-    margin:0 0 12px;
+    margin:0;
     color:var(--text);
+    flex:1;
+    min-width:0;
   }
+  .drag-handle{
+    width:22px;
+    height:22px;
+    min-width:22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--text-dim);
+    cursor:grab;
+    touch-action:none;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  .drag-handle svg{ width:18px; height:18px; }
+  .check-btn{
+    width:32px;
+    height:32px;
+    min-width:32px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    background:var(--surface-3);
+    color:var(--ok);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background .3s ease, color .3s ease, border-color .3s ease;
+  }
+  .check-btn svg{ width:16px; height:16px; }
+  .check-btn.flash{ background:var(--ok); color:#12141a; border-color:var(--ok); }
+
   .metric-table{
     display:grid;
     grid-template-columns:40px repeat(3,1fr);
@@ -204,18 +269,193 @@
     font-weight:500;
   }
 
+  /* ---- Progress overview ---- */
+  .progress-overview-list{
+    padding:4px 16px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .progress-chart-card{
+    --accent: var(--text-dim);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:6px solid var(--accent);
+    border-radius:10px;
+    padding:14px 16px 16px;
+    cursor:pointer;
+  }
+  .progress-chart-card:active{ background:var(--surface-2); }
+  .progress-chart-title{
+    font-size:15px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    margin-bottom:8px;
+  }
+  .chart-canvas-wrap{ position:relative; height:150px; }
+  .chart-canvas-wrap.large{ height:230px; margin:0 16px; }
+  .chart-empty{
+    color:var(--text-dim);
+    font-size:13px;
+    padding:20px 0;
+    text-align:center;
+  }
+
+  /* ---- Progress category detail ---- */
+  .progress-list{
+    padding:4px 16px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .progress-row{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    cursor:pointer;
+  }
+  .progress-row:active{ background:var(--surface-2); }
+  .progress-row-name{
+    font-weight:600;
+    text-transform:uppercase;
+    font-size:14px;
+    letter-spacing:.02em;
+  }
+  .progress-row-stats{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:2px;
+    flex:0 0 auto;
+  }
+  .progress-pct{ font-size:16px; font-weight:700; }
+  .progress-pct.pos{ color:var(--ok); }
+  .progress-pct.neg{ color:var(--legs); }
+  .progress-kg{ font-size:12px; color:var(--text-dim); }
+  .progress-none{ font-size:12px; color:var(--text-dim); }
+
+  /* ---- Exercise detail ---- */
+  .exercise-detail-stats{
+    display:flex;
+    gap:10px;
+    padding:4px 16px 16px;
+    flex-wrap:wrap;
+  }
+  .stat-pill{
+    flex:1;
+    min-width:100px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    align-items:center;
+  }
+  .stat-label{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); }
+  .stat-value{ font-size:20px; font-weight:700; }
+  .stat-value.pos{ color:var(--ok); }
+  .stat-value.neg{ color:var(--legs); }
+  .stat-date{ font-size:11px; color:var(--text-dim); }
+
+  /* ---- Modal ---- */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+    padding:16px;
+  }
+  @media (min-width:560px){
+    .modal-overlay{ align-items:center; }
+  }
+  .modal-box{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:20px;
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .modal-title{
+    font-size:18px;
+    margin:0 0 8px;
+    font-weight:600;
+  }
+  .modal-form{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .modal-form label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--text-dim);
+    margin-top:6px;
+  }
+  .modal-form input, .modal-form select{
+    background:var(--surface-3);
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--text);
+    font-size:16px;
+    padding:10px 12px;
+    width:100%;
+  }
+  .modal-primary-btn{
+    background:var(--accent, var(--ok));
+    color:#12141a;
+    border:none;
+    border-radius:10px;
+    padding:12px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:14px;
+  }
+  .modal-primary-btn:active{ opacity:.85; }
+  .modal-secondary-btn{
+    background:transparent;
+    color:var(--text-dim);
+    border:none;
+    padding:8px;
+    font-size:13px;
+    cursor:pointer;
+    align-self:center;
+  }
+
   @media (prefers-reduced-motion:reduce){
-    .menu-card, .metric-table input{ transition:none; }
+    .menu-card, .metric-table input, .check-btn{ transition:none; }
   }
 
   [hidden]{ display:none !important; }
 </style>
+</head>
+<body>
 
 <div class="app">
 
   <section id="view-menu">
     <div class="menu-title">Trainingsplan</div>
     <div class="menu-grid">
+      <button class="menu-card compact" id="card-progress" data-page="progress">
+        <span class="name">Progress</span>
+        <span class="sub">Fortschritt aller Übungen</span>
+      </button>
       <button class="menu-card" id="card-push" data-page="push">
         <span class="name">Push</span>
         <span class="sub">Schultern · Brust · Trizeps</span>
@@ -240,16 +480,31 @@
   <section class="workout-view" id="view-legs" hidden></section>
   <section class="workout-view" id="view-home" hidden></section>
 
+  <section class="workout-view" id="view-progress" hidden></section>
+  <section class="workout-view" id="view-progress-push" hidden></section>
+  <section class="workout-view" id="view-progress-pull" hidden></section>
+  <section class="workout-view" id="view-progress-legs" hidden></section>
+  <section class="workout-view" id="view-progress-home" hidden></section>
+  <section class="workout-view" id="view-exercise-detail" hidden></section>
+
 </div>
 
+<div class="modal-overlay" id="modal-overlay" hidden>
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js" integrity="sha512-WoViKhKD4qI2WruSZqv9+kvM4WfFhUMQCLN4QlDTt5aU56fLQy2gYoxWIqlEnXqJy/+Ac5q/hk1oWfqnMDhwMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 (function(){
-  var PAGES = {
+  var PAGE_DEFS = {
     push: { name:"Push", accentVar:"--push", exercises:["Schulter Presse","Incline Press","Butterfly","Brust Presse","Überkopf Trizeps","Trizeps Pushdown","Seitheben","Hintere Schulter","Bauch"] },
     pull: { name:"Pull", accentVar:"--pull", exercises:["T-Bar","Lat Pulldown","Lat Row","Preacher Curl","Hammer Curl","Lat Überzüge","Bayesian Curl","Wrist Curl","Bauch"] },
     legs: { name:"Legs", accentVar:"--legs", exercises:["Hamstrings","Leg Extension","Leg Press","Calf Raises","Adduktoren","Bauch"] },
     home: { name:"Home", accentVar:"--home", exercises:["Reverse Curl","Wrist Curl Proniert","Wrist Curl","Supiniert"] }
   };
+  var PAGE_KEYS = ["push","pull","legs","home"];
+  var ALL_VIEWS = ["menu","push","pull","legs","home","progress","progress-push","progress-pull","progress-legs","progress-home","exercise-detail"];
+  var CHART_PALETTE = ["#e8964a","#4a90c4","#c4524a","#5aa66d","#8a6fd1","#d1c25f","#5fbfae","#d15f9e"];
 
   var STORAGE_KEY = "trainingsplan_v1";
 
@@ -259,17 +514,25 @@
       return raw ? JSON.parse(raw) : {};
     }catch(e){ return {}; }
   }
-  function saveData(data){
+  function saveData(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
   }
 
   var data = loadData();
+  if(!data.order) data.order = {};
+  if(!data.history) data.history = {};
+  PAGE_KEYS.forEach(function(pk){
+    if(!data.order[pk]) data.order[pk] = PAGE_DEFS[pk].exercises.slice();
+    if(!data.history[pk]) data.history[pk] = {};
+  });
+  saveData();
+
+  function getExercises(pageKey){ return data.order[pageKey]; }
 
   function getEntry(pageKey, exercise){
     if(!data[pageKey]) data[pageKey] = {};
     var entry = data[pageKey][exercise];
     if(Array.isArray(entry)){
-      // migrate old format (reps-only array) to {kg, reps}
       entry = { kg:["","",""], reps: entry };
     }
     if(!entry){
@@ -279,106 +542,657 @@
     return entry;
   }
 
+  function getHistory(pageKey, exercise){
+    if(!data.history[pageKey]) data.history[pageKey] = {};
+    if(!data.history[pageKey][exercise]) data.history[pageKey][exercise] = [];
+    return data.history[pageKey][exercise];
+  }
+
+  function getProgressStats(pageKey, exercise){
+    var hist = getHistory(pageKey, exercise);
+    if(!hist.length) return null;
+    var start = hist[0], current = hist[hist.length - 1];
+    var pct = start.kg > 0 ? ((current.kg - start.kg) / start.kg * 100) : 0;
+    return { start:start, current:current, pct:pct, count:hist.length };
+  }
+
+  function todayISO(){
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function formatDate(iso){
+    var parts = String(iso).split("-");
+    if(parts.length !== 3) return iso;
+    return parts[2] + "." + parts[1] + "." + parts[0];
+  }
+
+  function parseNum(v){
+    var n = parseFloat(v);
+    return isFinite(n) ? n : null;
+  }
+
+  function getAccent(pageKey){
+    return getComputedStyle(document.documentElement).getPropertyValue(PAGE_DEFS[pageKey].accentVar).trim();
+  }
+
+  function recordProgressFromEntry(pageKey, exercise){
+    var entry = getEntry(pageKey, exercise);
+    var vals = entry.kg.map(parseNum).filter(function(v){ return v != null; });
+    if(!vals.length) return false;
+    var weight = Math.max.apply(null, vals);
+    var hist = getHistory(pageKey, exercise);
+    var today = todayISO();
+    var existing = hist.filter(function(h){ return h.date === today; })[0];
+    if(existing) existing.kg = weight; else hist.push({ date:today, kg:weight });
+    hist.sort(function(a,b){ return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+    saveData();
+    return true;
+  }
+
+  function saveManualProgress(pageKey, exercise, startDate, startKg, currentKg){
+    var hist = getHistory(pageKey, exercise);
+    var byDate = {};
+    hist.forEach(function(h){ byDate[h.date] = h.kg; });
+    byDate[startDate] = startKg;
+    byDate[todayISO()] = currentKg;
+    var merged = Object.keys(byDate).sort().map(function(d){ return { date:d, kg:byDate[d] }; });
+    data.history[pageKey][exercise] = merged;
+    saveData();
+  }
+
   var backIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
+  var plusIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  var checkIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var dragHandleSVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
 
-  function buildPage(pageKey){
-    var page = PAGES[pageKey];
-    var view = document.getElementById("view-" + pageKey);
-    var accent = getComputedStyle(document.documentElement).getPropertyValue(page.accentVar).trim();
-    view.style.setProperty("--accent", accent);
+  var modalOverlay = document.getElementById("modal-overlay");
+  var modalBox = document.getElementById("modal-box");
 
+  function openModal(buildFn){
+    modalBox.innerHTML = "";
+    buildFn(modalBox, closeModal);
+    modalOverlay.hidden = false;
+  }
+  function closeModal(){
+    modalOverlay.hidden = true;
+    modalBox.innerHTML = "";
+  }
+  modalOverlay.addEventListener("click", function(e){
+    if(e.target === modalOverlay) closeModal();
+  });
+
+  function buildHeader(title, onBack, onPlus){
     var header = document.createElement("div");
     header.className = "workout-header";
-    header.innerHTML =
-      '<h1>' + page.name + '</h1>' +
-      '<button class="back-btn" aria-label="Zurück zum Menü">' + backIconSVG + '</button>';
-    header.querySelector(".back-btn").addEventListener("click", function(){
-      showView("menu");
+
+    var h1 = document.createElement("h1");
+    h1.textContent = title;
+    header.appendChild(h1);
+
+    var actions = document.createElement("div");
+    actions.className = "header-actions";
+
+    if(onPlus){
+      var plusBtn = document.createElement("button");
+      plusBtn.type = "button";
+      plusBtn.className = "icon-btn plus-btn";
+      plusBtn.setAttribute("aria-label", "Hinzufügen");
+      plusBtn.innerHTML = plusIconSVG;
+      plusBtn.addEventListener("click", onPlus);
+      actions.appendChild(plusBtn);
+    }
+
+    var backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.className = "icon-btn back-btn";
+    backBtn.setAttribute("aria-label", "Zurück");
+    backBtn.innerHTML = backIconSVG;
+    backBtn.addEventListener("click", onBack);
+    actions.appendChild(backBtn);
+
+    header.appendChild(actions);
+    return header;
+  }
+
+  function attachDragHandle(handle, card, pageKey){
+    var pointerId = null;
+    var longPressTimer = null;
+    var dragging = false;
+    var startClientY = 0;
+
+    function onPointerDown(e){
+      if(e.pointerType === "mouse" && e.button !== 0) return;
+      pointerId = e.pointerId;
+      startClientY = e.clientY;
+      clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(function(){ beginDrag(); }, 220);
+    }
+
+    function beginDrag(){
+      dragging = true;
+      card.classList.add("dragging");
+      try{ handle.setPointerCapture(pointerId); }catch(err){}
+      document.addEventListener("pointermove", onPointerMove);
+      document.addEventListener("pointerup", onPointerUp);
+      document.addEventListener("pointercancel", onPointerUp);
+    }
+
+    function onPointerMove(e){
+      if(!dragging || e.pointerId !== pointerId) return;
+      e.preventDefault();
+      var deltaY = e.clientY - startClientY;
+      card.style.transform = "translateY(" + deltaY + "px)";
+
+      var list = card.parentElement;
+      if(!list) return;
+      var siblings = Array.prototype.slice.call(list.children).filter(function(c){ return c !== card; });
+      var cardRect = card.getBoundingClientRect();
+      var cardMidY = cardRect.top + cardRect.height / 2;
+
+      for(var i = 0; i < siblings.length; i++){
+        var sib = siblings[i];
+        var r = sib.getBoundingClientRect();
+        if(e.clientY < r.top || e.clientY > r.bottom) continue;
+        var sibMidY = r.top + r.height / 2;
+        if(cardMidY > sibMidY){
+          list.insertBefore(card, sib.nextSibling);
+        }else{
+          list.insertBefore(card, sib);
+        }
+        startClientY = e.clientY;
+        card.style.transform = "";
+        break;
+      }
+    }
+
+    function onPointerUp(){
+      clearTimeout(longPressTimer);
+      if(!dragging) return;
+      dragging = false;
+      card.classList.remove("dragging");
+      card.style.transform = "";
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerUp);
+      var list = card.parentElement;
+      if(list){
+        var newOrder = Array.prototype.slice.call(list.children).map(function(c){ return c.dataset.exercise; });
+        data.order[pageKey] = newOrder;
+        saveData();
+      }
+    }
+
+    handle.addEventListener("pointerdown", onPointerDown);
+    handle.addEventListener("pointerup", function(){ if(!dragging) clearTimeout(longPressTimer); });
+    handle.addEventListener("pointerleave", function(){ if(!dragging) clearTimeout(longPressTimer); });
+  }
+
+  function makeInput(pageKey, exercise, metric, i, value, extraClass){
+    var input = document.createElement("input");
+    input.type = "number";
+    input.inputMode = metric === "kg" ? "decimal" : "numeric";
+    input.min = "0";
+    if(metric === "kg") input.step = "0.5";
+    input.placeholder = metric === "kg" ? "kg" : "0";
+    input.value = value || "";
+    if(extraClass) input.classList.add(extraClass);
+
+    input.addEventListener("input", function(){
+      var current = getEntry(pageKey, exercise);
+      current[metric][i] = input.value;
+      saveData();
+      input.classList.add("saved");
+      clearTimeout(input._savedTimer);
+      input._savedTimer = setTimeout(function(){
+        input.classList.remove("saved");
+      }, 600);
     });
+
+    return input;
+  }
+
+  function createExerciseCard(pageKey, exercise){
+    var entry = getEntry(pageKey, exercise);
+    var card = document.createElement("div");
+    card.className = "exercise-card";
+    card.dataset.exercise = exercise;
+
+    var head = document.createElement("div");
+    head.className = "exercise-card-head";
+
+    var handle = document.createElement("div");
+    handle.className = "drag-handle";
+    handle.innerHTML = dragHandleSVG;
+
+    var h2 = document.createElement("h2");
+    h2.textContent = exercise;
+
+    var checkBtn = document.createElement("button");
+    checkBtn.type = "button";
+    checkBtn.className = "check-btn";
+    checkBtn.setAttribute("aria-label", "Speichern");
+    checkBtn.innerHTML = checkIconSVG;
+    checkBtn.addEventListener("click", function(){
+      saveData();
+      recordProgressFromEntry(pageKey, exercise);
+      checkBtn.classList.add("flash");
+      clearTimeout(checkBtn._flashTimer);
+      checkBtn._flashTimer = setTimeout(function(){ checkBtn.classList.remove("flash"); }, 700);
+    });
+
+    head.appendChild(handle);
+    head.appendChild(h2);
+    head.appendChild(checkBtn);
+    card.appendChild(head);
+
+    var table = document.createElement("div");
+    table.className = "metric-table";
+
+    table.appendChild(document.createElement("div"));
+    for(var h = 0; h < 3; h++){
+      var headCell = document.createElement("div");
+      headCell.className = "col-head";
+      headCell.textContent = "Satz " + (h + 1);
+      table.appendChild(headCell);
+    }
+
+    var kgLabel = document.createElement("div");
+    kgLabel.className = "row-label";
+    kgLabel.textContent = "kg";
+    table.appendChild(kgLabel);
+    for(var k = 0; k < 3; k++){
+      table.appendChild(makeInput(pageKey, exercise, "kg", k, entry.kg[k], "kg-input"));
+    }
+
+    var repsLabel = document.createElement("div");
+    repsLabel.className = "row-label";
+    repsLabel.textContent = "Wdh.";
+    table.appendChild(repsLabel);
+    for(var r = 0; r < 3; r++){
+      table.appendChild(makeInput(pageKey, exercise, "reps", r, entry.reps[r]));
+    }
+
+    card.appendChild(table);
+    attachDragHandle(handle, card, pageKey);
+    return card;
+  }
+
+  var viewRefs = {};
+
+  function renderWorkoutList(pageKey){
+    var list = viewRefs[pageKey].list;
+    list.innerHTML = "";
+    getExercises(pageKey).forEach(function(exercise){
+      list.appendChild(createExerciseCard(pageKey, exercise));
+    });
+  }
+
+  function openAddExerciseModal(pageKey){
+    openModal(function(box, close){
+      var title = document.createElement("h3");
+      title.className = "modal-title";
+      title.textContent = "Neue Übung – " + PAGE_DEFS[pageKey].name;
+      box.appendChild(title);
+
+      var form = document.createElement("div");
+      form.className = "modal-form";
+      var label = document.createElement("label");
+      label.textContent = "Übungsname";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "z. B. Face Pull";
+      form.appendChild(label);
+      form.appendChild(input);
+      box.appendChild(form);
+
+      function confirmAdd(){
+        var name = input.value.trim();
+        if(!name){ input.focus(); return; }
+        data.order[pageKey].push(name);
+        getEntry(pageKey, name);
+        saveData();
+        renderWorkoutList(pageKey);
+        close();
+      }
+
+      input.addEventListener("keydown", function(e){ if(e.key === "Enter") confirmAdd(); });
+
+      var confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "modal-primary-btn";
+      confirmBtn.textContent = "Hinzufügen";
+      confirmBtn.style.setProperty("--accent", getAccent(pageKey));
+      confirmBtn.addEventListener("click", confirmAdd);
+      box.appendChild(confirmBtn);
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "modal-secondary-btn";
+      cancelBtn.textContent = "Abbrechen";
+      cancelBtn.addEventListener("click", close);
+      box.appendChild(cancelBtn);
+
+      setTimeout(function(){ input.focus(); }, 50);
+    });
+  }
+
+  function buildPage(pageKey){
+    var page = PAGE_DEFS[pageKey];
+    var view = document.getElementById("view-" + pageKey);
+    view.style.setProperty("--accent", getAccent(pageKey));
+
+    var header = buildHeader(page.name, function(){ showView("menu"); }, function(){ openAddExerciseModal(pageKey); });
     view.appendChild(header);
 
     var list = document.createElement("div");
     list.className = "exercise-list";
+    view.appendChild(list);
+    viewRefs[pageKey] = { list:list };
 
-    function makeInput(pageKey, exercise, metric, i, value, extraClass){
-      var input = document.createElement("input");
-      input.type = "number";
-      input.inputMode = metric === "kg" ? "decimal" : "numeric";
-      input.min = "0";
-      if(metric === "kg") input.step = "0.5";
-      input.placeholder = metric === "kg" ? "kg" : "0";
-      input.value = value || "";
-      if(extraClass) input.classList.add(extraClass);
+    renderWorkoutList(pageKey);
+  }
 
-      input.addEventListener("input", function(){
-        var current = getEntry(pageKey, exercise);
-        current[metric][i] = input.value;
-        saveData(data);
-        input.classList.add("saved");
-        clearTimeout(input._savedTimer);
-        input._savedTimer = setTimeout(function(){
-          input.classList.remove("saved");
-        }, 600);
+  function renderCategoryChart(canvas, pageKey){
+    var exercises = getExercises(pageKey).filter(function(ex){ return getHistory(pageKey, ex).length > 0; });
+    var labelSet = {};
+    exercises.forEach(function(ex){
+      getHistory(pageKey, ex).forEach(function(h){ labelSet[h.date] = true; });
+    });
+    var labels = Object.keys(labelSet).sort();
+    var datasets = exercises.map(function(ex, i){
+      var hist = getHistory(pageKey, ex);
+      var map = {};
+      hist.forEach(function(h){ map[h.date] = h.kg; });
+      return {
+        label: ex,
+        data: labels.map(function(l){ return map.hasOwnProperty(l) ? map[l] : null; }),
+        spanGaps: true,
+        borderColor: CHART_PALETTE[i % CHART_PALETTE.length],
+        backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length],
+        pointRadius: 2,
+        tension: 0.25,
+        borderWidth: 2
+      };
+    });
+    new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: { labels: labels.map(formatDate), datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks:{ color:"#8f95a6", maxRotation:0, autoSkip:true, font:{ size:10 } }, grid:{ color:"#232733" } },
+          y: { ticks:{ color:"#8f95a6" }, grid:{ color:"#232733" } }
+        }
+      }
+    });
+  }
+
+  function renderExerciseChart(canvas, pageKey, exercise){
+    var hist = getHistory(pageKey, exercise);
+    var accent = getAccent(pageKey);
+    new Chart(canvas.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: hist.map(function(h){ return formatDate(h.date); }),
+        datasets: [{
+          label: exercise,
+          data: hist.map(function(h){ return h.kg; }),
+          borderColor: accent,
+          backgroundColor: accent,
+          pointRadius: 3,
+          tension: 0.25,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks:{ color:"#8f95a6" }, grid:{ color:"#232733" } },
+          y: { ticks:{ color:"#8f95a6" }, grid:{ color:"#232733" } }
+        }
+      }
+    });
+  }
+
+  function renderProgressOverview(){
+    var view = document.getElementById("view-progress");
+    view.innerHTML = "";
+    view.style.setProperty("--accent", getComputedStyle(document.documentElement).getPropertyValue("--progress").trim());
+
+    var header = buildHeader("Progress", function(){ showView("menu"); });
+    view.appendChild(header);
+
+    var wrap = document.createElement("div");
+    wrap.className = "progress-overview-list";
+
+    PAGE_KEYS.forEach(function(pk){
+      var card = document.createElement("div");
+      card.className = "progress-chart-card";
+      card.style.setProperty("--accent", getAccent(pk));
+
+      var title = document.createElement("div");
+      title.className = "progress-chart-title";
+      title.textContent = PAGE_DEFS[pk].name;
+      card.appendChild(title);
+
+      var hasData = getExercises(pk).some(function(ex){ return getHistory(pk, ex).length > 0; });
+      if(hasData){
+        var canvasWrap = document.createElement("div");
+        canvasWrap.className = "chart-canvas-wrap";
+        var canvas = document.createElement("canvas");
+        canvasWrap.appendChild(canvas);
+        card.appendChild(canvasWrap);
+        setTimeout(function(){ renderCategoryChart(canvas, pk); }, 0);
+      }else{
+        var empty = document.createElement("div");
+        empty.className = "chart-empty";
+        empty.textContent = "Noch keine Daten";
+        card.appendChild(empty);
+      }
+
+      card.addEventListener("click", function(){ showView("progress-" + pk); });
+      wrap.appendChild(card);
+    });
+
+    view.appendChild(wrap);
+  }
+
+  function openManualProgressModal(pageKey){
+    openModal(function(box, close){
+      var title = document.createElement("h3");
+      title.className = "modal-title";
+      title.textContent = "Fortschritt eintragen";
+      box.appendChild(title);
+
+      var form = document.createElement("div");
+      form.className = "modal-form";
+
+      var selLabel = document.createElement("label");
+      selLabel.textContent = "Übung";
+      var select = document.createElement("select");
+      getExercises(pageKey).forEach(function(ex){
+        var opt = document.createElement("option");
+        opt.value = ex;
+        opt.textContent = ex;
+        select.appendChild(opt);
       });
 
-      return input;
-    }
+      var dateLabel = document.createElement("label");
+      dateLabel.textContent = "Trainingsbeginn";
+      var dateInput = document.createElement("input");
+      dateInput.type = "date";
 
-    page.exercises.forEach(function(exercise){
-      var entry = getEntry(pageKey, exercise);
-      var card = document.createElement("div");
-      card.className = "exercise-card";
+      var startLabel = document.createElement("label");
+      startLabel.textContent = "Trainingsgewicht (kg)";
+      var startInput = document.createElement("input");
+      startInput.type = "number";
+      startInput.step = "0.5";
+      startInput.min = "0";
+      startInput.placeholder = "kg";
 
-      var h2 = document.createElement("h2");
-      h2.textContent = exercise;
-      card.appendChild(h2);
+      var curLabel = document.createElement("label");
+      curLabel.textContent = "Aktueller Trainingsstand (kg)";
+      var curInput = document.createElement("input");
+      curInput.type = "number";
+      curInput.step = "0.5";
+      curInput.min = "0";
+      curInput.placeholder = "kg";
 
-      var table = document.createElement("div");
-      table.className = "metric-table";
+      [selLabel, select, dateLabel, dateInput, startLabel, startInput, curLabel, curInput].forEach(function(el){
+        form.appendChild(el);
+      });
+      box.appendChild(form);
 
-      // header row: corner + Satz 1/2/3
-      table.appendChild(document.createElement("div"));
-      for(var h = 0; h < 3; h++){
-        var head = document.createElement("div");
-        head.className = "col-head";
-        head.textContent = "Satz " + (h + 1);
-        table.appendChild(head);
+      function prefill(){
+        var stats = getProgressStats(pageKey, select.value);
+        if(stats){
+          dateInput.value = stats.start.date;
+          startInput.value = stats.start.kg;
+          curInput.value = stats.current.kg;
+        }else{
+          dateInput.value = todayISO();
+          startInput.value = "";
+          curInput.value = "";
+        }
       }
+      select.addEventListener("change", prefill);
+      prefill();
 
-      // kg row
-      var kgLabel = document.createElement("div");
-      kgLabel.className = "row-label";
-      kgLabel.textContent = "kg";
-      table.appendChild(kgLabel);
-      for(var k = 0; k < 3; k++){
-        table.appendChild(makeInput(pageKey, exercise, "kg", k, entry.kg[k], "kg-input"));
+      var saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "modal-primary-btn";
+      saveBtn.textContent = "Speichern";
+      saveBtn.style.setProperty("--accent", getAccent(pageKey));
+      saveBtn.addEventListener("click", function(){
+        var startKg = parseNum(startInput.value);
+        var curKg = parseNum(curInput.value);
+        if(startKg == null || curKg == null || !dateInput.value) return;
+        saveManualProgress(pageKey, select.value, dateInput.value, startKg, curKg);
+        renderCategoryDetail(pageKey);
+        close();
+      });
+      box.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "modal-secondary-btn";
+      cancelBtn.textContent = "Abbrechen";
+      cancelBtn.addEventListener("click", close);
+      box.appendChild(cancelBtn);
+    });
+  }
+
+  function renderCategoryDetail(pageKey){
+    var view = document.getElementById("view-progress-" + pageKey);
+    view.innerHTML = "";
+    view.style.setProperty("--accent", getAccent(pageKey));
+
+    var header = buildHeader(PAGE_DEFS[pageKey].name + " Progress", function(){ showView("progress"); }, function(){ openManualProgressModal(pageKey); });
+    view.appendChild(header);
+
+    var list = document.createElement("div");
+    list.className = "progress-list";
+
+    getExercises(pageKey).forEach(function(ex){
+      var stats = getProgressStats(pageKey, ex);
+      var row = document.createElement("div");
+      row.className = "progress-row";
+
+      var name = document.createElement("div");
+      name.className = "progress-row-name";
+      name.textContent = ex;
+      row.appendChild(name);
+
+      var statBox = document.createElement("div");
+      statBox.className = "progress-row-stats";
+      if(stats){
+        var pctSpan = document.createElement("span");
+        pctSpan.className = "progress-pct " + (stats.pct > 0 ? "pos" : (stats.pct < 0 ? "neg" : ""));
+        pctSpan.textContent = (stats.pct > 0 ? "+" : "") + stats.pct.toFixed(1) + "%";
+        var kgSpan = document.createElement("span");
+        kgSpan.className = "progress-kg";
+        kgSpan.textContent = stats.start.kg + " kg → " + stats.current.kg + " kg";
+        statBox.appendChild(pctSpan);
+        statBox.appendChild(kgSpan);
+      }else{
+        var none = document.createElement("span");
+        none.className = "progress-none";
+        none.textContent = "Keine Daten";
+        statBox.appendChild(none);
       }
+      row.appendChild(statBox);
 
-      // reps row
-      var repsLabel = document.createElement("div");
-      repsLabel.className = "row-label";
-      repsLabel.textContent = "Wdh.";
-      table.appendChild(repsLabel);
-      for(var r = 0; r < 3; r++){
-        table.appendChild(makeInput(pageKey, exercise, "reps", r, entry.reps[r]));
-      }
-
-      card.appendChild(table);
-      list.appendChild(card);
+      row.addEventListener("click", function(){ showExerciseDetail(pageKey, ex); });
+      list.appendChild(row);
     });
 
     view.appendChild(list);
   }
 
+  function showExerciseDetail(pageKey, exercise){
+    var view = document.getElementById("view-exercise-detail");
+    view.innerHTML = "";
+    view.style.setProperty("--accent", getAccent(pageKey));
+
+    var header = buildHeader(exercise, function(){ showView("progress-" + pageKey); });
+    view.appendChild(header);
+
+    var stats = getProgressStats(pageKey, exercise);
+    var statsWrap = document.createElement("div");
+    statsWrap.className = "exercise-detail-stats";
+
+    if(stats){
+      var pillStart = document.createElement("div");
+      pillStart.className = "stat-pill";
+      pillStart.innerHTML = '<span class="stat-label">Start</span><span class="stat-value">' + stats.start.kg + ' kg</span><span class="stat-date">' + formatDate(stats.start.date) + '</span>';
+      var pillCurrent = document.createElement("div");
+      pillCurrent.className = "stat-pill";
+      pillCurrent.innerHTML = '<span class="stat-label">Aktuell</span><span class="stat-value">' + stats.current.kg + ' kg</span><span class="stat-date">' + formatDate(stats.current.date) + '</span>';
+      var pillPct = document.createElement("div");
+      pillPct.className = "stat-pill";
+      var pctClass = stats.pct > 0 ? "pos" : (stats.pct < 0 ? "neg" : "");
+      pillPct.innerHTML = '<span class="stat-label">Progress</span><span class="stat-value ' + pctClass + '">' + (stats.pct > 0 ? "+" : "") + stats.pct.toFixed(1) + '%</span>';
+      statsWrap.appendChild(pillStart);
+      statsWrap.appendChild(pillCurrent);
+      statsWrap.appendChild(pillPct);
+    }else{
+      var empty = document.createElement("div");
+      empty.className = "chart-empty";
+      empty.textContent = "Noch keine Daten für diese Übung";
+      statsWrap.appendChild(empty);
+    }
+    view.appendChild(statsWrap);
+
+    if(stats && stats.count){
+      var canvasWrap = document.createElement("div");
+      canvasWrap.className = "chart-canvas-wrap large";
+      var canvas = document.createElement("canvas");
+      canvasWrap.appendChild(canvas);
+      view.appendChild(canvasWrap);
+      setTimeout(function(){ renderExerciseChart(canvas, pageKey, exercise); }, 0);
+    }
+
+    showView("exercise-detail");
+  }
+
   function showView(key){
-    document.getElementById("view-menu").hidden = key !== "menu";
-    Object.keys(PAGES).forEach(function(pageKey){
-      document.getElementById("view-" + pageKey).hidden = key !== pageKey;
+    ALL_VIEWS.forEach(function(k){
+      var el = document.getElementById("view-" + k);
+      if(el) el.hidden = (k !== key);
     });
+    if(key === "progress") renderProgressOverview();
+    else if(key.indexOf("progress-") === 0) renderCategoryDetail(key.slice("progress-".length));
     window.scrollTo(0, 0);
   }
 
-  Object.keys(PAGES).forEach(buildPage);
+  PAGE_KEYS.forEach(buildPage);
 
   document.querySelectorAll(".menu-card").forEach(function(card){
     card.addEventListener("click", function(){
@@ -389,3 +1203,5 @@
   showView("menu");
 })();
 </script>
+</body>
+</html>
